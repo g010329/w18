@@ -1,6 +1,37 @@
-require("@nomicfoundation/hardhat-toolbox");
+require('@nomicfoundation/hardhat-toolbox');
+require('dotenv').config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.17",
+    // defaultNetwork: 'goerli',
+    solidity: {
+        compilers: [
+            {
+                version: '0.5.16',
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: '0.8.17',
+            },
+        ],
+    },
+    networks: {
+        hardhat: {},
+        // hardhat: { hardfork: 'london' },
+        goerli: {
+            url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+            accounts: [process.env.PRIVATE_KEY],
+            chainId: 5,
+        },
+    },
+    etherscan: {
+        apiKey: {
+            goerli: process.env.ETHERSCAN_API_KEY,
+        },
+    },
 };
