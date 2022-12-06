@@ -18,6 +18,8 @@
         "typechain": "^8.1.1"
     },
     "dependencies": {
+        "@uniswap/lib": "^4.0.1-alpha",
+        "@uniswap/v2-core": "^1.0.1",
         "dotenv": "^16.0.3"
     }
 }
