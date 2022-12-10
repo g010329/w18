@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import "abdk-libraries-solidity/ABDKMathQuad.sol";
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
@@ -38,7 +39,7 @@ struct CallbackData {
 }
 
 
-contract FlashSwapBot{
+contract FlashSwapBot is Ownable {
     // using ABDKMathQuad for int;
     using ABDKMathQuad for uint256;
     using SafeERC20 for IERC20;
@@ -52,6 +53,8 @@ contract FlashSwapBot{
     // TODO: address(0), address(1) 都可以嗎？
     address permissionedPairAddress = address(0);
 
+
+
     // 合約核心功能兩大部分：  
     // 1. 計算利潤: getProfit  
     // 2. 執行套利: flashArbitrage
@@ -62,6 +65,29 @@ contract FlashSwapBot{
     EnumerableSet.AddressSet baseTokens;
 
     event Log(); // timestamp, from address, profit value
+
+
+    function addBaseToken(address token) external onlyOwner {
+        baseTokens.add(token);
+    }
+
+    function removeBaseToken(address token) external onlyOwner {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            // FIXME: 這邊要不要用 safeTransfer
+            // do not use safe transfer to prevents revert by any shitty token
+            IERC20(token).transfer(owner(), balance);
+        }
+        baseTokens.remove(token);
+    }
+
+    function getBaseTokens() external view returns (address[] memory tokens) {
+        uint256 length = baseTokens.length();
+        tokens = new address[](length);
+        for (uint256 i = 0; i < length; i++) {
+            tokens[i] = baseTokens.at(i);
+        }
+    }
 
     // 判斷傳入的 token 是否在 baseTokens 中 
     function baseTokensContains(address token) public view returns (bool) {
@@ -91,7 +117,7 @@ contract FlashSwapBot{
                 ABDKMathQuad.div(ABDKMathQuad.fromUInt(pool1Reserve0),ABDKMathQuad.fromUInt(pool1Reserve1))
             );
         
-        require(cmpResult != 0, 'price should not be equal');
+        require(cmpResult != 0, 'No profit to arbitrage');
 
         if (cmpResult == -1) {
             (lowerPool, higherPool) = (pool0, pool1);
@@ -113,7 +139,6 @@ contract FlashSwapBot{
     function getProfit(address pool0,address pool1) view external returns (uint256 profit, address baseToken){
         (bool pool0Token0isBaseToken, , ) = isPool0Token0isBaseToken(pool0, pool1);
         baseToken = pool0Token0isBaseToken ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
-
         (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, pool0Token0isBaseToken);
 
         // FIXME: 改寫 calcBorrowAmount 以裡面用到的函式
