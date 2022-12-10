@@ -2,10 +2,12 @@
 pragma solidity ^0.8.17;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import "abdk-libraries-solidity/ABDKMathQuad.sol";
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
-import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
+import 'hardhat/console.sol';
+// import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
 
 // import './periphery/libraries/UniswapV2Library.sol';
 
@@ -37,7 +39,10 @@ struct CallbackData {
 
 
 contract FlashSwapBot{
-    using ABDKMathQuad for int;
+    // using ABDKMathQuad for int;
+    using ABDKMathQuad for uint256;
+    using SafeERC20 for IERC20;
+
     // 權限控管 
     // 1. owner - 只有 owner 可以呼叫使用這個合約
     // 2. 收款 tokens - 寫一個列表指定要獲利的 token 有哪些(可能可以寫到script中？)
@@ -105,7 +110,7 @@ contract FlashSwapBot{
     // token 分成兩種：base token 和 quote token
     // 從價低的池子借出，到價高的池子swap獲利
     // 傳入兩個 pair address
-    function getProfit(address pool0,address pool1) external returns (uint256 profit, address baseToken){
+    function getProfit(address pool0,address pool1) view external returns (uint256 profit, address baseToken){
         (bool pool0Token0isBaseToken, , ) = isPool0Token0isBaseToken(pool0, pool1);
         baseToken = pool0Token0isBaseToken ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
 
@@ -126,7 +131,7 @@ contract FlashSwapBot{
     }
 
     /// @notice 在兩個 uniswap-like AMM pool 之間套利
-    function flashArbitrage() external {
+    function flashArbitrage(address pool0, address pool1) external {
         ArbitrageInfo memory info;
         (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isPool0Token0isBaseToken(pool0, pool1);
 
@@ -134,7 +139,7 @@ contract FlashSwapBot{
         (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
 
 
-        // FIXME: 功能為何？
+        // 只有呼叫了flashArbitrage時會去修改callback address對pair address授權，一旦完成交易就會取消授權
         // this must be updated every transaction for callback origin authentication
         permissionedPairAddress = info.lowerPool;
 
@@ -163,7 +168,7 @@ contract FlashSwapBot{
         bytes memory data = abi.encode(callbackData);
         // 最後一個param判斷是flashswap還是普通的swap，如果為空值""就是普通的swap，如果有值就是flashswap
         // data 可以在 uniswapV2Call 解構出來
-        IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data); 
+        IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data); 
 
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
         require(balanceAfter > balanceBefore, 'Losing money');
@@ -269,7 +274,7 @@ contract FlashSwapBot{
         res = res / 10**3;
     }
 
-    function uniswapV2Call(address _sender, uint _amount0, uint _amount1, bytes calldata _data) external override {
+    function uniswapV2Call(address _sender, uint _amount0, uint _amount1, bytes calldata _data) external {
         require(msg.sender == permissionedPairAddress, 'Non permissioned address call');
         require(_sender == address(this), "!sender");
         
@@ -285,6 +290,41 @@ contract FlashSwapBot{
         // -------------------------------------------------------------
 
         IERC20(info.debtToken).safeTransfer(info.debtPool, info.debtAmount);
+    }
+
+    // copy from UniswapV2Library(compile版本不同，無法用import故直接複製)
+    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    function getAmountIn(
+        uint256 amountOut,
+        uint256 reserveIn,
+        uint256 reserveOut
+    ) internal pure returns (uint256 amountIn) {
+        require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        // uint256 numerator = reserveIn.mul(amountOut).mul(1000);
+        uint256 numerator = reserveIn * amountOut * (1000);
+        // uint256 denominator = reserveOut.sub(amountOut).mul(997);
+        uint256 denominator = reserveOut * amountOut * (997);
+        // amountIn = (numerator / denominator).add(1);
+        amountIn = (numerator / denominator)+1;
+    }
+
+    // copy from UniswapV2Library
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut
+    ) internal pure returns (uint256 amountOut) {
+        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        // uint256 amountInWithFee = amountIn.mul(997);
+        uint256 amountInWithFee = amountIn * (997);
+        // uint256 numerator = amountInWithFee.mul(reserveOut);
+        uint256 numerator = amountInWithFee * reserveOut;
+        // uint256 denominator = reserveIn.mul(1000).add(amountInWithFee);
+        uint256 denominator = reserveIn * (1000)+(amountInWithFee);
+        amountOut = numerator / denominator;
     }
 
     fallback () payable external{}
