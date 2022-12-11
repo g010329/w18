@@ -119,7 +119,7 @@ contract FlashSwapBot is Ownable {
         
         require(cmpResult != 0, 'No profit to arbitrage');
 
-        if (cmpResult == -1) {
+        if (cmpResult > 0) {
             (lowerPool, higherPool) = (pool0, pool1);
             (orderedReserves.a1, orderedReserves.b1, orderedReserves.a2, orderedReserves.b2) = baseTokenSmaller
                 ? (pool0Reserve0, pool0Reserve1, pool1Reserve0, pool1Reserve1)
@@ -208,7 +208,7 @@ contract FlashSwapBot is Ownable {
 
     // FIXME: 改寫
     /// @dev 計算套利利潤最大時的借款金額
-    function calcBorrowAmount(OrderedReserves memory reserves) internal pure returns (uint256 amount) {
+    function calcBorrowAmount(OrderedReserves memory reserves) pure public returns (uint256 amount) {
         // we can't use a1,b1,a2,b2 directly, because it will result overflow/underflow on the intermediate result
         // so we:
         //    1. divide all the numbers by d to prevent from overflow/underflow
@@ -303,18 +303,35 @@ contract FlashSwapBot is Ownable {
         require(msg.sender == permissionedPairAddress, 'Non permissioned address call');
         require(_sender == address(this), "!sender");
         
-        // Custom Logic ------------------------------------------------
-        uint256 borrowedAmount = _amount0 > 0 ? _amount0 : _amount1;
+        
+        // // Custom Logic ------------------------------------------------
+        // uint256 borrowedAmount = _amount0 > 0 ? _amount0 : _amount1;
+        // CallbackData memory info = abi.decode(_data, (CallbackData));
+
+        // // uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
+
+        // // 將 borrowToken 借出 borrowedAmount 個轉進 info.targetPool
+        // IERC20(info.borrowedToken).safeTransfer(info.targetPool, borrowedAmount);
+        // console.log('borrow----------------------',info.borrowedToken,borrowedAmount);
+
+        // // 進行套利 swap
+        // (uint256 amount0Out, uint256 amount1Out) =
+        //     info.debtTokenSmaller ? (info.debtTokenOutAmount, uint256(0)) : (uint256(0), info.debtTokenOutAmount);
+        // IUniswapV2Pair(info.targetPool).swap(amount0Out, amount1Out, address(this), new bytes(0));
+        // // -------------------------------------------------------------
+
+
+        
+        
         CallbackData memory info = abi.decode(_data, (CallbackData));
+        // 歸還借款＋手續費
+        // uint fee = ((borrowedAmount * 3) / 997) + 1;
+        // uint amountToRepay = borrowedAmount + fee;
 
-        IERC20(info.borrowedToken).safeTransfer(info.targetPool, borrowedAmount);
-
-        (uint256 amount0Out, uint256 amount1Out) =
-            info.debtTokenSmaller ? (info.debtTokenOutAmount, uint256(0)) : (uint256(0), info.debtTokenOutAmount);
-        IUniswapV2Pair(info.targetPool).swap(amount0Out, amount1Out, address(this), new bytes(0));
-        // -------------------------------------------------------------
-
-        IERC20(info.debtToken).safeTransfer(info.debtPool, info.debtAmount);
+        console.log('repay----------------------',info.debtToken,info.debtAmount);
+        // IERC20(info.debtToken).safeTransfer(info.debtPool, amountToRepay);
+        IERC20(info.debtToken).safeTransfer(info.debtToken, info.debtAmount);
+        
     }
 
     // copy from UniswapV2Library(compile版本不同，無法用import故直接複製)

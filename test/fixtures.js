@@ -9,7 +9,7 @@ async function deployAMMFixture() {
 
     const ERC20Factory = await ethers.getContractFactory('ERC20Token');
     const erc20 = await ERC20Factory.deploy(
-        ethers.utils.parseUnits('100000', 'ether'),
+        ethers.utils.parseUnits('12000000000', 'ether'),
         'my token',
         'MTK'
     );
@@ -18,7 +18,7 @@ async function deployAMMFixture() {
     // FIXME: 不確定用一般ERC20代替weth的合約是否會有問題
     const FakeERC20WETHFactory = await ethers.getContractFactory('ERC20Token');
     const weth = await FakeERC20WETHFactory.deploy(
-        ethers.utils.parseUnits('100000', 'ether'),
+        ethers.utils.parseUnits('12000000000', 'ether'),
         'fake erc20 weth',
         'WETH'
     );

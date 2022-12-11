@@ -59,8 +59,8 @@ contract TestFlashSwap is IUniswapV2Callee{
         // about 0.3%
         uint fee = ((amount * 3) / 997) + 1;
         uint amountToRepay = amount + fee;
-
-        console.log('tokenBorrow: ',tokenBorrow, amountToRepay);
+        console.log('================================================================');
+        console.log('tokenBorrow: ',pair,tokenBorrow, amountToRepay);
         // do stuff here
         // emit Log("amount", amount);
         // emit Log("amount0", _amount0);

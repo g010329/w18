@@ -30,54 +30,107 @@ describe('Test FlashSwap Arbitrage', function () {
         await arbitrage.addBaseToken(weth.address);
     });
 
+    // describe('Math function', async function () {
+    //     it('returns right amount with small liquidity pairs', async () => {
+    //         const reserves = {
+    //             a1: ethers.utils.parseEther('5000'),
+    //             b1: ethers.utils.parseEther('10'),
+    //             a2: ethers.utils.parseEther('6000'),
+    //             b2: ethers.utils.parseEther('10'),
+    //         };
+
+    //         const res = await arbitrage.calcBorrowAmount(reserves);
+    //         // @ts-ignore
+    //         expect(res).to.be.closeTo(
+    //             ethers.utils.parseEther('0.45'),
+    //             ethers.utils.parseEther('0.01')
+    //         );
+    //     });
+    //     it('returns right amount with large liquidity pairs', async () => {
+    //         const reserves = {
+    //             a1: ethers.utils.parseEther('1200000000'),
+    //             b1: ethers.utils.parseEther('600000'),
+    //             a2: ethers.utils.parseEther('1000000000'),
+    //             b2: ethers.utils.parseEther('300000'),
+    //         };
+
+    //         const res = await arbitrage.calcBorrowAmount(reserves);
+
+    //         // @ts-ignore
+    //         expect(res).to.be.closeTo(
+    //             ethers.utils.parseEther('53052.8604'),
+    //             ethers.utils.parseEther('1500')
+    //         );
+    //     });
+    //     it('returns right amount with big difference between liquidity pairs', async () => {
+    //         // const reserves = { a1: '1200000000', b1: '600000', a2: '100000', b2: '30' };
+    //         const reserves = {
+    //             a1: ethers.utils.parseEther('1200000000'),
+    //             b1: ethers.utils.parseEther('600000'),
+    //             a2: ethers.utils.parseEther('100000'),
+    //             b2: ethers.utils.parseEther('30'),
+    //         };
+
+    //         const res = await arbitrage.calcBorrowAmount(reserves);
+    //         // @ts-ignore
+    //         expect(res).to.be.closeTo(
+    //             ethers.utils.parseEther('8.729'),
+    //             ethers.utils.parseEther('0.01')
+    //         );
+    //     });
+    // });
+
     describe('Test Arbitrage', async function () {
         beforeEach(async () => {
-            await erc20.approve(routerA.address, ethers.utils.parseEther('1000'));
-            await weth.approve(routerA.address, ethers.utils.parseEther('1000'));
-            await erc20.approve(routerB.address, ethers.utils.parseEther('1000'));
-            await weth.approve(routerB.address, ethers.utils.parseEther('1000'));
+            await erc20.approve(routerA.address, ethers.utils.parseEther('12000000000'));
+            await weth.approve(routerA.address, ethers.utils.parseEther('12000000000'));
+            await erc20.approve(routerB.address, ethers.utils.parseEther('12000000000'));
+            await weth.approve(routerB.address, ethers.utils.parseEther('12000000000'));
         });
-        it('Should not execute arbitrage', async function () {
-            await routerA.addLiquidity(
-                erc20.address,
-                weth.address,
-                ethers.utils.parseEther('50'),
-                ethers.utils.parseEther('1'),
-                0, // for simplicity
-                0,
-                owner.address,
-                Date.now()
-                // Math.floor(Date.now() / 1000) + 60 * 10
-            );
-            await routerB.addLiquidity(
-                erc20.address,
-                weth.address,
-                ethers.utils.parseEther('50'),
-                ethers.utils.parseEther('1'),
-                0,
-                0,
-                owner.address,
-                Date.now()
-            );
 
-            const pairAAddress = await factoryA.getPair(erc20.address, weth.address);
-            const pairA = new ethers.Contract(pairAAddress, pairJSON.abi, ethers.provider);
-            // const [reserveA0, reserveA1] = await pairA.getReserves();
+        // it('Should not execute arbitrage', async function () {
+        //     await routerA.addLiquidity(
+        //         erc20.address,
+        //         weth.address,
+        //         ethers.utils.parseEther('50'),
+        //         ethers.utils.parseEther('1'),
+        //         0, // for simplicity
+        //         0,
+        //         owner.address,
+        //         Date.now()
+        //         // Math.floor(Date.now() / 1000) + 60 * 10
+        //     );
+        //     await routerB.addLiquidity(
+        //         erc20.address,
+        //         weth.address,
+        //         ethers.utils.parseEther('50'),
+        //         ethers.utils.parseEther('1'),
+        //         0,
+        //         0,
+        //         owner.address,
+        //         Date.now()
+        //     );
 
-            const pairBAddress = await factoryB.getPair(erc20.address, weth.address);
-            const pairB = new ethers.Contract(pairBAddress, pairJSON.abi, ethers.provider);
-            // const [reserveB0, reserveB1] = await pairB.getReserves();
+        //     const pairAAddress = await factoryA.getPair(erc20.address, weth.address);
+        //     const pairA = new ethers.Contract(pairAAddress, pairJSON.abi, ethers.provider);
+        //     // const [reserveA0, reserveA1] = await pairA.getReserves();
 
-            await expect(arbitrage.getProfit(pairAAddress, pairBAddress)).to.be.revertedWith(
-                'No profit to arbitrage'
-            );
-        });
+        //     const pairBAddress = await factoryB.getPair(erc20.address, weth.address);
+        //     const pairB = new ethers.Contract(pairBAddress, pairJSON.abi, ethers.provider);
+        //     // const [reserveB0, reserveB1] = await pairB.getReserves();
+
+        //     await expect(arbitrage.getProfit(pairAAddress, pairBAddress)).to.be.revertedWith(
+        //         'No profit to arbitrage'
+        //     );
+        // });
         it('Should execute arbitrage', async function () {
             await routerA.addLiquidity(
                 erc20.address,
                 weth.address,
-                ethers.utils.parseEther('60'),
-                ethers.utils.parseEther('1'),
+                // ethers.utils.parseEther('1000'),
+                // ethers.utils.parseEther('350'),
+                ethers.utils.parseEther('300000'),
+                ethers.utils.parseEther('1000000000'),
                 0, // for simplicity
                 0,
                 owner.address,
@@ -87,8 +140,8 @@ describe('Test FlashSwap Arbitrage', function () {
             await routerB.addLiquidity(
                 erc20.address,
                 weth.address,
-                ethers.utils.parseEther('50'),
-                ethers.utils.parseEther('1'),
+                ethers.utils.parseEther('600000'),
+                ethers.utils.parseEther('1200000000'),
                 0,
                 0,
                 owner.address,
@@ -97,15 +150,130 @@ describe('Test FlashSwap Arbitrage', function () {
 
             const pairAAddress = await factoryA.getPair(erc20.address, weth.address);
             const pairA = new ethers.Contract(pairAAddress, pairJSON.abi, ethers.provider);
+            console.log('pairA', pairAAddress);
+            console.log('factoryA', factoryA.address);
 
             const pairBAddress = await factoryB.getPair(erc20.address, weth.address);
             const pairB = new ethers.Contract(pairBAddress, pairJSON.abi, ethers.provider);
+            console.log('pairB', pairAAddress);
+            console.log('factoryB', factoryB.address);
 
-            // console.log('here: ', await arbitrage.getProfit(pairAAddress, pairBAddress));
-            // await expect(arbitrage.getProfit(pairAAddress, pairBAddress)).to.be.gt(0);
-            // await expect(arbitrage.getProfit(pairAAddress, pairBAddress)).to.be.revertedWith(
-            //     'No profit to arbitrage'
-            // );
+            let res = await arbitrage.getProfit(pairAAddress, pairBAddress); // 149878779.798342745355962875;
+            // 53050,000000000000000000
+            expect(res.profit).to.be.gt(ethers.utils.parseEther('0')); // 設定最低獲利門檻
+            expect(res.baseToken).to.be.eq(weth.address);
+
+            await erc20.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
+            await weth.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
+            // console.log('balance', await erc20.balanceOf(arbitrage.address));
+            // console.log('balance', await weth.balanceOf(arbitrage.address));
+
+            await arbitrage.flashArbitrage(pairAAddress, pairBAddress);
         });
     });
+    // 2. 創建流動池 pair/pool
+    // 3. 添加兩個AMM合約的流動性，並製造出價差
+    // it('hahah Add liquidity & test flashSwap', async function () {
+    //     const { owner, factoryA, factoryB, routerA, routerB, erc20, weth } = await loadFixture(
+    //         deployAMMFixture
+    //     );
+    //     // const DAPPUAmount = web3.utils.toWei('250', 'ether');
+    //     // const WETHAmount = web3.utils.toWei('1', 'ether');
+    //     const AMOUNT_10000 = ethers.utils.parseUnits('10000', 'ether');
+    //     const TOKEN_AMOUNT = ethers.utils.parseUnits('50', 'ether');
+    //     const AMOUNT_20 = ethers.utils.parseUnits('20', 'ether');
+    //     const AMOUNT_80 = ethers.utils.parseUnits('80', 'ether');
+    //     const AMOUNT_100 = ethers.utils.parseUnits('100', 'ether');
+    //     const WETH_AMOUNT = ethers.utils.parseUnits('1', 'ether');
+    //     const AMOUNT_2 = ethers.utils.parseUnits('2', 'ether');
+
+    //     // console.log('erc20 address: ', erc20.address);
+    //     // console.log('weth address: ', weth.address);
+
+    //     // console.log('allowance', await erc20.allowance(owner.address, router.address));
+    //     // console.log('allowance', await weth.allowance(owner.address, router.address));
+
+    //     await erc20.approve(routerA.address, AMOUNT_10000);
+    //     await weth.approve(routerA.address, AMOUNT_10000);
+
+    //     // console.log('test: ', erc20.address, weth.address);
+    //     // console.log('balance', await erc20.balanceOf(owner.address));
+    //     // console.log('balance', await weth.balanceOf(owner.address));
+    //     // console.log('123', TOKEN_AMOUNT);
+
+    //     // 使用合約添加流動性
+    //     // const TestFactory = await ethers.getContractFactory('TestUniswapLiquidity');
+    //     // const test = await TestFactory.deploy(router.address);
+    //     // await erc20.approve(test.address, TOKEN_AMOUNT);
+    //     // await weth.approve(test.address, WETH_AMOUNT);
+    //     // let tx = await test.addLiquidity(erc20.address, weth.address, TOKEN_AMOUNT, WETH_AMOUNT);
+    //     // console.log('tx', tx);
+
+    //     // console.log('after: ', await erc20.allowance(owner.address, router.address));
+    //     // console.log('after: ', await weth.allowance(owner.address, router.address));
+
+    //     // 第一次添加流動性，創建流動池
+    //     const res = await routerA.addLiquidity(
+    //         erc20.address,
+    //         weth.address,
+    //         AMOUNT_100,
+    //         AMOUNT_100,
+    //         0, // for simplicity
+    //         0,
+    //         owner.address,
+    //         Date.now()
+    //         // Math.floor(Date.now() / 1000) + 60 * 10
+    //     );
+    //     const pairAddress = await factoryA.getPair(erc20.address, weth.address);
+    //     console.log('pairAddress', pairAddress);
+    //     const testPair = new ethers.Contract(pairAddress, pairJSON.abi, ethers.provider);
+    //     const [reserveA, reserveB] = await testPair.getReserves();
+    //     console.log(reserveA);
+    //     console.log(reserveB);
+
+    //     // 第二次添加流動性，按比例添加
+    //     // const res2 = await routerA.addLiquidity(
+    //     //     erc20.address,
+    //     //     weth.address,
+    //     //     ethers.utils.parseUnits('60', 'ether'),
+    //     //     ethers.utils.parseUnits('1', 'ether'),
+    //     //     0, // for simplicity
+    //     //     0,
+    //     //     owner.address,
+    //     //     Math.floor(Date.now() / 1000) + 60 * 10
+    //     // );
+
+    //     // const [reserveA2, reserveB2] = await testPair.getReserves();
+    //     // console.log(reserveA2);
+    //     // console.log(reserveB2);
+
+    //     // 測試 flashSwap
+
+    //     console.log('factoryA', factoryA.address);
+    //     const TestFlashSwapFactory = await ethers.getContractFactory('TestFlashSwap');
+    //     const testFlashSwapContract = await TestFlashSwapFactory.deploy(
+    //         factoryA.address,
+    //         weth.address
+    //     );
+
+    //     // 先給 flashswap 錢來支付還款＋手續費
+    //     await erc20.transfer(testFlashSwapContract.address, ethers.utils.parseEther('100'));
+
+    //     const txRes = await testFlashSwapContract.testSwap(
+    //         erc20.address,
+    //         ethers.utils.parseEther('5')
+    //     );
+    //     const result = await txRes.wait(); // 取得 event logs
+
+    //     for (const event of result.events) {
+    //         console.log(`Event ${event.event} with args ${event.args}`); // FIXME: 很多個log? https://ethereum.stackexchange.com/questions/93757/listening-to-events-using-ethers-js-on-a-hardhat-test-network
+    //     }
+    // });
+
+    // let data = UniswapV2Pair.bytecode;
+    // console.log('hahahha: ', ethers.utils.keccak256(data));
+
+    // 4. 價低處買進，價高處賣掉。使用 flashloan（沒利潤 revert)
 });
+
+// https://docs.uniswap.org/sdk/v3/guides/liquidity/swap-and-add
