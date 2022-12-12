@@ -13,18 +13,19 @@ const UniswapV2Pair = require('../artifacts/contracts/core/UniswapV2Pair.sol/Uni
 
 describe('Test FlashSwap Arbitrage', function () {
     let owner;
-    let factoryA;
-    let factoryB;
-    let routerA;
-    let routerB;
-    let erc20;
+    let otherAccount;
+    let factoryA; // 0x5FbDB2315678afecb367f032d93F642f64180aa3
+    let routerA; // 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+    // pairA 0x65F17E1F16D8b2fB778F1Cfa30f1F263e8459f56
+    let factoryB; // 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+    let routerB; // 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+    // pairB 0x0Bd7f727b5DA47Cf78048F443563e0A150391B6f
+    let erc20; // 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
     let weth; // 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-    let x;
 
     beforeEach(async () => {
-        ({ factoryA, factoryB, routerA, routerB, erc20, weth, owner } = await loadFixture(
-            deployAMMFixture
-        ));
+        ({ factoryA, factoryB, routerA, routerB, erc20, weth, owner, otherAccount } =
+            await loadFixture(deployAMMFixture));
 
         ({ arbitrage } = await loadFixture(deployArbitrageFixture));
         await arbitrage.addBaseToken(weth.address);
@@ -127,8 +128,8 @@ describe('Test FlashSwap Arbitrage', function () {
             await routerA.addLiquidity(
                 erc20.address,
                 weth.address,
-                // ethers.utils.parseEther('1000'),
-                // ethers.utils.parseEther('350'),
+                // ethers.utils.parseEther('30'),
+                // ethers.utils.parseEther('100000'),
                 ethers.utils.parseEther('300000'),
                 ethers.utils.parseEther('1000000000'),
                 0, // for simplicity
@@ -144,19 +145,21 @@ describe('Test FlashSwap Arbitrage', function () {
                 ethers.utils.parseEther('1200000000'),
                 0,
                 0,
-                owner.address,
+                otherAccount.address,
                 Date.now()
             );
 
             const pairAAddress = await factoryA.getPair(erc20.address, weth.address);
             const pairA = new ethers.Contract(pairAAddress, pairJSON.abi, ethers.provider);
-            console.log('pairA', pairAAddress);
-            console.log('factoryA', factoryA.address);
 
             const pairBAddress = await factoryB.getPair(erc20.address, weth.address);
             const pairB = new ethers.Contract(pairBAddress, pairJSON.abi, ethers.provider);
-            console.log('pairB', pairAAddress);
-            console.log('factoryB', factoryB.address);
+
+            await weth.transfer(pairAAddress, ethers.utils.parseEther('100000'));
+            await pairA.connect(owner).sync();
+
+            await weth.transfer(pairBAddress, ethers.utils.parseEther('100000'));
+            await pairB.connect(owner).sync();
 
             let res = await arbitrage.getProfit(pairAAddress, pairBAddress); // 149878779.798342745355962875;
             // 53050,000000000000000000
@@ -165,15 +168,13 @@ describe('Test FlashSwap Arbitrage', function () {
 
             await erc20.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
             await weth.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
-            // console.log('balance', await erc20.balanceOf(arbitrage.address));
-            // console.log('balance', await weth.balanceOf(arbitrage.address));
 
             await arbitrage.flashArbitrage(pairAAddress, pairBAddress);
         });
     });
     // 2. 創建流動池 pair/pool
     // 3. 添加兩個AMM合約的流動性，並製造出價差
-    // it('hahah Add liquidity & test flashSwap', async function () {
+    // it('Add liquidity & test flashSwap', async function () {
     //     const { owner, factoryA, factoryB, routerA, routerB, erc20, weth } = await loadFixture(
     //         deployAMMFixture
     //     );
@@ -187,19 +188,8 @@ describe('Test FlashSwap Arbitrage', function () {
     //     const WETH_AMOUNT = ethers.utils.parseUnits('1', 'ether');
     //     const AMOUNT_2 = ethers.utils.parseUnits('2', 'ether');
 
-    //     // console.log('erc20 address: ', erc20.address);
-    //     // console.log('weth address: ', weth.address);
-
-    //     // console.log('allowance', await erc20.allowance(owner.address, router.address));
-    //     // console.log('allowance', await weth.allowance(owner.address, router.address));
-
     //     await erc20.approve(routerA.address, AMOUNT_10000);
     //     await weth.approve(routerA.address, AMOUNT_10000);
-
-    //     // console.log('test: ', erc20.address, weth.address);
-    //     // console.log('balance', await erc20.balanceOf(owner.address));
-    //     // console.log('balance', await weth.balanceOf(owner.address));
-    //     // console.log('123', TOKEN_AMOUNT);
 
     //     // 使用合約添加流動性
     //     // const TestFactory = await ethers.getContractFactory('TestUniswapLiquidity');
@@ -216,8 +206,8 @@ describe('Test FlashSwap Arbitrage', function () {
     //     const res = await routerA.addLiquidity(
     //         erc20.address,
     //         weth.address,
-    //         AMOUNT_100,
-    //         AMOUNT_100,
+    //         ethers.utils.parseUnits('10000', 'ether'),
+    //         ethers.utils.parseUnits('10000', 'ether'),
     //         0, // for simplicity
     //         0,
     //         owner.address,
@@ -225,11 +215,11 @@ describe('Test FlashSwap Arbitrage', function () {
     //         // Math.floor(Date.now() / 1000) + 60 * 10
     //     );
     //     const pairAddress = await factoryA.getPair(erc20.address, weth.address);
-    //     console.log('pairAddress', pairAddress);
+    //     // console.log('pairAddress', pairAddress);
     //     const testPair = new ethers.Contract(pairAddress, pairJSON.abi, ethers.provider);
     //     const [reserveA, reserveB] = await testPair.getReserves();
-    //     console.log(reserveA);
-    //     console.log(reserveB);
+    //     // console.log(reserveA);
+    //     // console.log(reserveB);
 
     //     // 第二次添加流動性，按比例添加
     //     // const res2 = await routerA.addLiquidity(
@@ -247,9 +237,8 @@ describe('Test FlashSwap Arbitrage', function () {
     //     // console.log(reserveA2);
     //     // console.log(reserveB2);
 
-    //     // 測試 flashSwap
+    //     // TODO: 測試 flashSwap
 
-    //     console.log('factoryA', factoryA.address);
     //     const TestFlashSwapFactory = await ethers.getContractFactory('TestFlashSwap');
     //     const testFlashSwapContract = await TestFlashSwapFactory.deploy(
     //         factoryA.address,
@@ -261,7 +250,7 @@ describe('Test FlashSwap Arbitrage', function () {
 
     //     const txRes = await testFlashSwapContract.testSwap(
     //         erc20.address,
-    //         ethers.utils.parseEther('5')
+    //         ethers.utils.parseEther('100')
     //     );
     //     const result = await txRes.wait(); // 取得 event logs
 
@@ -270,10 +259,8 @@ describe('Test FlashSwap Arbitrage', function () {
     //     }
     // });
 
-    // let data = UniswapV2Pair.bytecode;
-    // console.log('hahahha: ', ethers.utils.keccak256(data));
-
-    // 4. 價低處買進，價高處賣掉。使用 flashloan（沒利潤 revert)
+    let data = UniswapV2Pair.bytecode;
+    console.log('hahahha: ', ethers.utils.keccak256(data));
 });
 
 // https://docs.uniswap.org/sdk/v3/guides/liquidity/swap-and-add
