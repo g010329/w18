@@ -20,7 +20,7 @@ struct OrderedReserves {
 struct ArbitrageInfo {
     address baseToken;
     address quoteToken;
-    bool baseTokenSmaller; // FIXME: 改變數名稱
+    bool baseTokenSmaller;
     address lowerPool; // pool with lower price, denominated in quote asset
     address higherPool; // pool with higher price, denominated in quote asset
 }
@@ -38,14 +38,9 @@ struct CallbackData {
 contract FlashSwapBot is Ownable {
     using ABDKMathQuad for uint256;
     using SafeERC20 for IERC20;
-
-    // 權限控管 
-    // 1. owner - 只有 owner 可以呼叫使用這個合約
-    // 2. 收款 tokens - 寫一個列表指定要獲利的 token 有哪些(可能可以寫到script中？)
     
     // ACCESS CONTROL
     // 只有呼叫了 arbitrage 後才會把可以執行 callback 的pair address 存到這個變數中
-    // TODO: address(0), address(1) 都可以嗎？
     address permissionedPairAddress = address(0);
 
     // 合約核心功能兩大部分：  

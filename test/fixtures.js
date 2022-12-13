@@ -15,7 +15,7 @@ async function deployAMMFixture() {
     );
 
     /// @notice: Not weth interface
-    // FIXME: 不確定用一般ERC20代替weth的合約是否會有問題
+    // FIXME: 這邊目前是用一般ERC20代替weth的合約
     const FakeERC20WETHFactory = await ethers.getContractFactory('ERC20Token');
     const weth = await FakeERC20WETHFactory.deploy(
         ethers.utils.parseUnits('12000000000', 'ether'),
