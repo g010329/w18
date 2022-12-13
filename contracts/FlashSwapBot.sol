@@ -157,6 +157,26 @@ contract FlashSwapBot is Ownable {
 
     }
 
+    // function test(address pool0, address pool1) public {
+    //     // borrow quote token on lower price pool, calculate how much debt we need to pay demoninated in base token
+    //     uint256 debtAmount = getAmountIn(borrowAmount, orderedReserves.a1, orderedReserves.b1);
+    //     // sell borrowed quote token on higher price pool, calculate how much base token we can get
+    //     uint256 baseTokenOutAmount = getAmountOut(borrowAmount, orderedReserves.b2, orderedReserves.a2);
+        
+    //     CallbackData memory callbackData;
+    //     callbackData.debtPool = info.lowerPool;
+    //     callbackData.targetPool = info.higherPool;
+    //     callbackData.debtTokenSmaller = info.baseTokenSmaller;
+    //     callbackData.borrowedToken = info.quoteToken;
+    //     callbackData.debtToken = info.baseToken;
+    //     callbackData.debtAmount = debtAmount;
+    //     callbackData.debtTokenOutAmount = baseTokenOutAmount;
+
+    //     bytes memory data = abi.encode(callbackData);
+        
+    //     IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data); 
+    // }
+
     /// @notice 在兩個 uniswap-like AMM pool 之間套利
     function flashArbitrage(address pool0, address pool1) external {
         ArbitrageInfo memory info;
@@ -171,8 +191,11 @@ contract FlashSwapBot is Ownable {
 
         uint256 balanceBefore = IERC20(info.baseToken).balanceOf(address(this));
 
-        
-        uint256 borrowAmount = calcBorrowAmount(orderedReserves);
+        // 53050000000000000000000
+        // 40000000000000000000
+        // uint256 borrowAmount = calcBorrowAmount(orderedReserves);
+        uint256 borrowAmount =40000000000000000000;
+        console.log('borrowAmount!!!!',borrowAmount);
         (uint256 amount0Out, uint256 amount1Out) =
             info.baseTokenSmaller ? (uint256(0), borrowAmount) : (borrowAmount, uint256(0));
         // borrow quote token on lower price pool, calculate how much debt we need to pay demoninated in base token
