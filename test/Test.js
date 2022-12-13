@@ -95,13 +95,12 @@ describe('Test FlashSwap Arbitrage', function () {
             const pairBAddress = await factoryB.getPair(erc20.address, weth.address);
             const pairB = new ethers.Contract(pairBAddress, pairJSON.abi, ethers.provider);
 
-            await weth.transfer(pairAAddress, ethers.utils.parseEther('100000'));
-            await weth.transfer(pairBAddress, ethers.utils.parseEther('100000'));
+            // await weth.transfer(pairAAddress, ethers.utils.parseEther('100000'));
+            // await weth.transfer(pairBAddress, ethers.utils.parseEther('100000'));
 
-            await erc20.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
-            await weth.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
+            // // await erc20.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
+            // // await weth.transfer(arbitrage.address, ethers.utils.parseEther('6200000000'));
             await arbitrage.flashArbitrage(pairAAddress, pairBAddress);
-            // await arbitrage.testFlashSwap();
         });
     });
 });

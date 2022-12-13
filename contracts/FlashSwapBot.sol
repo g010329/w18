@@ -177,11 +177,12 @@ contract FlashSwapBot is Ownable {
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
         require(balanceAfter > balanceBefore, 'Losing money');
 
+        IERC20(info.baseToken).safeTransfer(owner(), balanceAfter);
         permissionedPairAddress = address(0);
     }
 
     // FIXME:
-    /// @dev 計算套利利潤最大時的借款金額
+    // 計算套利利潤最大時的借款金額
     function calcBorrowAmount(OrderedReserves memory reserves) pure public returns (uint256 amount) {
         // we can't use a1,b1,a2,b2 directly, because it will result overflow/underflow on the intermediate result
         // so we:
