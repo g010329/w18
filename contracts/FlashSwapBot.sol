@@ -156,8 +156,6 @@ contract FlashSwapBot is Ownable {
         permissionedPairAddress = info.lowerPool;
 
         uint256 balanceBefore = IERC20(info.baseToken).balanceOf(address(this));
-
-        
         uint256 borrowAmount = calcBorrowAmount(orderedReserves);
         (uint256 amount0Out, uint256 amount1Out) =
             info.baseTokenSmaller ? (uint256(0), borrowAmount) : (borrowAmount, uint256(0));
@@ -241,7 +239,6 @@ contract FlashSwapBot is Ownable {
         amount = (x1 > 0 && x1 < b1 && x1 < b2) ? uint256(x1) * d : uint256(x2) * d;
     }
 
-    // FIXME: 
     /// @dev find solution of quadratic equation: ax^2 + bx + c = 0, only return the positive solution
     function calcSolutionForQuadratic(
         int256 a,
@@ -252,32 +249,9 @@ contract FlashSwapBot is Ownable {
         // m < 0 leads to complex number
         require(m > 0, 'Complex number');
 
-        int256 sqrtM = int256(sqrt(uint256(m)));
+        int256 sqrtM = ABDKMathQuad.toInt(ABDKMathQuad.sqrt(ABDKMathQuad.fromUInt(uint256(m))));
         x1 = (-b + sqrtM) / (2 * a);
         x2 = (-b - sqrtM) / (2 * a);
-    }
-
-    // FIXME:
-    /// @dev Newton’s method for caculating square root of n
-    function sqrt(uint256 n) internal pure returns (uint256 res) {
-        assert(n > 1);
-
-        // The scale factor is a crude way to turn everything into integer calcs.
-        // Actually do (n * 10 ^ 4) ^ (1/2)
-        uint256 _n = n * 10**6;
-        uint256 c = _n;
-        res = _n;
-
-        uint256 xi;
-        while (true) {
-            xi = (res + c / res) / 2;
-            // don't need be too precise to save gas
-            if (res - xi < 1000) {
-                break;
-            }
-            res = xi;
-        }
-        res = res / 10**3;
     }
 
     function uniswapV2Call(
