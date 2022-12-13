@@ -29,18 +29,18 @@ module.exports = {
             },
         ],
     },
-    networks: {
-        hardhat: {},
-        // hardhat: { hardfork: 'london' },
-        goerli: {
-            url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-            accounts: [process.env.PRIVATE_KEY],
-            chainId: 5,
-        },
-    },
-    etherscan: {
-        apiKey: {
-            goerli: process.env.ETHERSCAN_API_KEY,
-        },
-    },
+    // networks: {
+    //     hardhat: {},
+    //     // hardhat: { hardfork: 'london' },
+    //     goerli: {
+    //         url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+    //         accounts: [process.env.PRIVATE_KEY],
+    //         chainId: 5,
+    //     },
+    // },
+    // etherscan: {
+    //     apiKey: {
+    //         goerli: process.env.ETHERSCAN_API_KEY,
+    //     },
+    // },
 };
